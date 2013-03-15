@@ -7,7 +7,7 @@ GtoRed = 0.1; %effectiveness of Green for Red Demosaicing
 GtoBlue = 0.1;
 
 source = im2double(imread('../testimages/rock.jpg'));
-source = source(1:10,1:10,:);
+%source = source(1:10,1:10,:);
 img_size = size(source);
 img_size = img_size(1:2);
 
@@ -99,19 +99,66 @@ g_err = image_mosaic(3:img_size(1)-3, 3: img_size(2)-3,2) - source(3:img_size(1)
 g_err = abs(g_err);
 gerr_avg= sum(sum(g_err,1),2)/(img_size(1)-4)/ (img_size(2)-4)
 
-%% Filling in Red value
+%% Filling in R,B holes by two stages
+%% First Pass - fill the holes between Reds
 for r = 2: (img_size(1)-1)
   for c = 2: (img_size(2)-1)
     
+    %% Filling in Red value
     if(bayerFull_v(r,c) == 2 && bayerFull_v(r,c-1) == 1) %RGR  
-     image_mosaic(r,c,1) = (1.0-GtoRed)*0.5*(image_mosaic(r,c-1,1) + image_mosaic(r,c+1,1)) + GtoRed*image_mosaic(r,c,2);
+     if(image_mosaic(r,c-1,2) ~= 0 & image_mosaic(r,c+1,2) ~=0)
+       g_factor = 0.5*(image_mosaic(r,c-1,1)/image_mosaic(r,c-1,2) + image_mosaic(r,c+1,1)/image_mosaic(r,c+1,2));
+     else 
+       g_factor =0;
+     end
+     image_mosaic(r,c,1) = (1.0-GtoRed)*0.5*(image_mosaic(r,c-1,1) + image_mosaic(r,c+1,1)) + GtoRed*image_mosaic(r,c,2)*g_factor;
     elseif(bayerFull_v(r,c) == 2 && bayerFull_v(r-1,c) == 1) %R;G;R  
-     image_mosaic(r,c,1) = (1.0-GtoRed)*0.5*(image_mosaic(r-1,c,1) + image_mosaic(r+1,c,1)) + GtoRed*image_mosaic(r,c,2);
+     if(image_mosaic(r-1,c,2) ~= 0 & image_mosaic(r+1,c,2) ~=0)
+       g_factor = 0.5*(image_mosaic(r-1,c,1)/image_mosaic(r-1,c,2) + image_mosaic(r+1,c,1)/image_mosaic(r+1,c,2));
+     else 
+       g_factor =0;
+     end
+     image_mosaic(r,c,1) = (1.0-GtoRed)*0.5*(image_mosaic(r-1,c,1) + image_mosaic(r+1,c,1)) + GtoRed*image_mosaic(r,c,2)*g_factor;
     end
+
+    %% Filling in Blue value
+    if(bayerFull_v(r,c) == 2 && bayerFull_v(r,c-1) == 3) %BGB  
+     if(image_mosaic(r,c-1,2) ~= 0 & image_mosaic(r,c+1,2) ~=0)
+       g_factor = 0.5*(image_mosaic(r,c-1,3)/image_mosaic(r,c-1,2) + image_mosaic(r,c+1,3)/image_mosaic(r,c+1,2));
+     else 
+       g_factor =0;
+     end
+     image_mosaic(r,c,3) = (1.0-GtoBlue)*0.5*(image_mosaic(r,c-1,3) + image_mosaic(r,c+1,3)) + GtoBlue*image_mosaic(r,c,2)*g_factor;
+    elseif(bayerFull_v(r,c) == 2 && bayerFull_v(r-1,c) == 3) %B;G;B  
+     if(image_mosaic(r-1,c,2) ~= 0 & image_mosaic(r+1,c,2) ~=0)
+       g_factor = 0.5*(image_mosaic(r-1,c,3)/image_mosaic(r-1,c,2) + image_mosaic(r+1,c,3)/image_mosaic(r+1,c,2));
+     else 
+       g_factor =0;
+     end
+     image_mosaic(r,c,3) = (1.0-GtoRed)*0.5*(image_mosaic(r-1,c,3) + image_mosaic(r+1,c,3)) + GtoRed*image_mosaic(r,c,2)*g_factor;
+    end
+
   end
 end
 
 
+%% Second Pass
+%% First Pass - fill the rest of holes (bilinear interpolation)
 
+for r = 2: (img_size(1)-1)
+  for c = 2: (img_size(2)-1)
+    % filling in red
+    if(bayerFull_v(r,c) == 3)   % Blue spots should be filled with Red
+      image_mosaic(r,c,1) = 0.25* ( image_mosaic(r-1,c,1) + image_mosaic(r+1,c,1) + image_mosaic(r,c-1,1)+ image_mosaic(r,c+1,1));
+    end
+    if(bayerFull_v(r,c) == 1)   % Red spots should be filled with Blue
+      image_mosaic(r,c,3) = 0.25* ( image_mosaic(r-1,c,3) + image_mosaic(r+1,c,3) + image_mosaic(r,c-1,3)+ image_mosaic(r,c+1,3));
+    end
 
+  end
+end
 
+figure;
+imshow(source);
+figure;
+imshow(image_mosaic);
