@@ -3,14 +3,9 @@ lrWidth = size(rawList{1}, 2);
 lrHeight = size(rawList{1}, 1);
 
 % Resolution of the "high resolution" output image
-gridScale = 1; % Scale mapping new 
-hrWidth = 320;
-hrHeight = 240;
-
-
-% Known offsets for each of the images in rawList
-offsetX = [0, 3];
-offsetY = [0, 3];
+gridScale = 1; % Scale factor between low and high resolutions
+hrWidth = lrWidth * gridScale;
+hrHeight = lrHeight * gridScale;
 
 % Indices for the Bayer pattern in the low resolution images
 % Assumes an R G / G B pattern
@@ -28,7 +23,7 @@ isRed  (sub2ind([lrHeight, lrWidth], redGridY(:),   redGridX(:)))   = 1;
 isGreen(sub2ind([lrHeight, lrWidth], greenGridY(:), greenGridX(:))) = 1;
 isBlue (sub2ind([lrHeight, lrWidth], blueGridY(:),  blueGridX(:)))  = 1;
 
-%%
+%% Build vectors of the samples
 redSamples = []; redPosX = []; redPosY = [];
 greenSamples = []; greenPosX = []; greenPosY = [];
 blueSamples = [];  bluePosX = []; bluePosY = [];
@@ -54,9 +49,9 @@ end
 
 % Draw a pretty plot showing where all the samples lie
 % figure(1); clf; hold on;
-% plot(redPosX, redPosY, 'rx');
+% plot(redPosX, redPosY, 'ro');
 % plot(greenPosX, greenPosY, 'gx');
-% plot(bluePosX, bluePosY, 'bx');
+% plot(bluePosX, bluePosY, 'b.');
 
 %%
 upGrid = zeros([hrHeight, hrWidth, 3]);
@@ -74,7 +69,7 @@ for ii = 1:hrHeight
       % This really should be much sharper than Gaussian.  We want very close
       % points to be weighted extremely highly, but if two are roughly the
       % same distance but far away, they should be treated equally.
-      weight = exp(-((posY{c} - interpPointY).^2 + (posX{c} - interpPointX).^2));
+      weight = exp(-((posY{c} - interpPointY).^2 + (posX{c} - interpPointX).^2) * 2);
 
       normval = sum(weight);
       upGrid(ii, jj, c) = samples{c}' * weight / normval;
@@ -97,7 +92,8 @@ greenDm = imfilter(greenGrid, greenFilt);
 blueDm = imfilter(blueGrid, blueFilt);
 
 stack = cat(3, redDm, greenDm, blueDm);
-figure(1); imshow(stack);
+figure(1); clf;
+imshow(stack);
 
 %% Linear interpolation demosaicking
 redGrid = isRed .* rawList{1};
