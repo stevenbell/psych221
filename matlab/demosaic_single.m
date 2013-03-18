@@ -9,10 +9,13 @@ GtoBlue = GtoB;% effectiveness of Green for Blue Demosaicing
 
 %% Read a test image
 source = im2double(imread(file));
-%source = source(1:10,1:10,:);
 img_size = size(source);
 img_size = img_size(1:2);
 
+%% Make image size multiples of 2
+img_size(1) = floor(img_size(1)/2) *2
+img_size(2) = floor(img_size(2)/2) *2
+source = source(1:img_size(1),1:img_size(2),:);
 
 %% Create the artificial Bayer matrix
 bayerPattern = [1, 2; 2, 3]; % 1=red, 2=green, 3=blue
@@ -215,12 +218,11 @@ scielab = getscielab(source_cropped*2^8,image_cropped*2^8,8,0);
 scielab_ref = getscielab(source_cropped*2^8,image_demosaic_ref_cropped*2^8,8,0);
 
 %% Display
-if (display_on ==1)
+if(display_on ==1)
 figure;
 imshow(source_cropped);
 figure;
 imshow(image_cropped);
 figure;
 imshow(image_demosaic_ref_cropped);
-end
 end
