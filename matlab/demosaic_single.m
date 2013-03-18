@@ -1,17 +1,14 @@
-% Test our demosaicing algorithm with a small image.
-% input image soulbe be RGB image
-clear;
-
+function [psnr, psnr_ref, scielab, scielab_ref] = demosaic_single (file, GtoR, GtoB, display_on)
 %% Tunable Paramters
-GtoRed = 0.1; % effectiveness of Green for Red Demosaicing 
-GtoBlue = 0.1;% effectiveness of Green for Blue Demosaicing 
+GtoRed =GtoR; % effectiveness of Green for Red Demosaicing 
+GtoBlue = GtoB;% effectiveness of Green for Blue Demosaicing 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Preprocessing Input Test Image
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Read a test image
-source = im2double(imread('../testimages/rock.jpg'));
+source = im2double(imread(file));
 %source = source(1:10,1:10,:);
 img_size = size(source);
 img_size = img_size(1:2);
@@ -32,6 +29,7 @@ end
 for c = 1:3
 image_mosaic(:,:,c) = source(:,:,c) .* double(bayerFull(:,:,c));
 end
+image_mosaic_ref = image_mosaic;
 image_mosaic_RGBcombined = image_mosaic(:,:,1) + image_mosaic(:,:,2) + image_mosaic (:,:,3);
 
 
@@ -46,14 +44,14 @@ image_mosaic_RGBcombined = image_mosaic(:,:,1) + image_mosaic(:,:,2) + image_mos
 %% Computation for Blue grandiednt matrix
 %% Gbx2 = Bx-2 + Bx+2 -2*Bx
 %% Gby2 = By-2 + By+2 -2*By
-padd = [0,2]
+padd = [0,2];
 Bx_n2 = padarray(image_mosaic (:,:,3),padd,0,'pre');
 Bx_p2 = image_mosaic(:,3:(img_size(2)),3);
 Bx_p2 = padarray(Bx_p2,[0,4],0,'post');
 Bx = padarray(image_mosaic (:,:,3),padd,0,'post');
 Gbx2 = Bx_n2 + Bx_p2 -2 *Bx;
 
-padd = [2,0]
+padd = [2,0];
 By_n2 = padarray(image_mosaic (:,:,3),padd,0,'pre');
 By_p2 = image_mosaic(3:(img_size(1)),:,3);
 By_p2 = padarray(By_p2,[4,0],0,'post');
@@ -63,14 +61,14 @@ Gby2 = By_n2 + By_p2 -2 *By;
 %% Computation for Red grandiednt matrix
 %% Grx2 = Rx-2 + Rx+2 -2*Rx
 %% Gry2 = Ry-2 + Ry+2 -2*Ry
-padd = [0,2]
+padd = [0,2];
 Rx_n2 = padarray(image_mosaic (:,:,1),padd,0,'pre');
 Rx_p2 = image_mosaic(:,3:(img_size(2)),1);
 Rx_p2 = padarray(Rx_p2,[0,4],0,'post');
 Rx = padarray(image_mosaic (:,:,1),padd,0,'post');
 Grx2 = Rx_n2 + Rx_p2 -2 *Rx;
 
-padd = [2,0]
+padd = [2,0];
 Ry_n2 = padarray(image_mosaic (:,:,1),padd,0,'pre');
 Ry_p2 = image_mosaic(3:(img_size(1)),:,1);
 Ry_p2 = padarray(Ry_p2,[4,0],0,'post');
@@ -122,7 +120,7 @@ end
 % Evaluate Green prediction error
 g_err = image_mosaic(3:img_size(1)-3, 3: img_size(2)-3,2) - source(3:img_size(1)-3, 3: img_size(2)-3,2);
 g_err = abs(g_err);
-gerr_avg= sum(sum(g_err,1),2)/(size(g_err,1))/ (size(g_err,2))
+gerr_avg= sum(sum(g_err,1),2)/(size(g_err,1))/ (size(g_err,2));
 
 
 %% 2. Interpolation for the Red and Blue channels 
@@ -202,11 +200,27 @@ for r = 2: (img_size(1)-1)
   end
 end
 
-figure;
-imshow(source);
-figure;
-imshow(image_mosaic);
 
-img_demosaic_ref = demosaic(uint8(image_mosaic_RGBcombined *2^8),'rggb');
+%% Excluding boundary region
+source_cropped = source (7: (img_size(1)-6), 7: (img_size(2)-6), :);
+image_cropped = image_mosaic(7: (img_size(1)-6), 7: (img_size(2)-6), :);
+%image_mosaic_ref_cropped = image_mosaic_ref(7: (img_size(1)-6), 7: (img_size(2)-6), :);
+image_demosaic_ref = demosaic(uint8(image_mosaic_RGBcombined *2^8),'rggb');
+image_demosaic_ref_cropped = image_demosaic_ref(7: (img_size(1)-6), 7: (img_size(2)-6), :);
+
+%% Performance Metric
+psnr = getPSNR(source_cropped*2^8,image_cropped*2^8,8);
+psnr_ref = getPSNR(source_cropped*2^8,image_demosaic_ref_cropped*2^8,8);
+scielab = getscielab(source_cropped*2^8,image_cropped*2^8,8,0);
+scielab_ref = getscielab(source_cropped*2^8,image_demosaic_ref_cropped*2^8,8,0);
+
+%% Display
+if (display_on ==1)
 figure;
-imshow(img_demosaic_ref);
+imshow(source_cropped);
+figure;
+imshow(image_cropped);
+figure;
+imshow(image_demosaic_ref_cropped);
+end
+end

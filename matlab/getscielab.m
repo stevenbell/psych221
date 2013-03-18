@@ -1,4 +1,4 @@
-function getscielab(img1,img2,bit_depth)
+function result = getscielab(img1,img2,bit_depth, graphic_on)
 
 %Distance to Display that the image will be displayed
 vDist =0.3;
@@ -47,9 +47,10 @@ params.filterSize  = sampPerDeg;
 params.filters = [];
 
 [errorImage, params] = scielab(img1XYZ, img2XYZ, whiteXYZ, params);
-mean(errorImage(:))
+result =mean(errorImage(:));
 
 %% Examining and interpreting the results.
+if(graphic_on ==1)
 vcNewGraphWin;
 imagesc(errorImage);
 colorbar('vert');
@@ -62,4 +63,5 @@ figure;
 imshow(img1);
 figure;
 imshow(img2);
+end
 end
