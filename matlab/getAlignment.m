@@ -2,6 +2,8 @@ function [x, y] = getAlignment(imSet)
 % Calculate the relative X and Y offsets needed to align a set of images.
 % The returned offsets have subpixel resolution.
 
+SHOW_IMG = false;
+
 nImages = length(imSet);
 width = size(imSet{1}, 2);
 height = size(imSet{1}, 1);
@@ -39,15 +41,32 @@ for baseIdx = 1:nImages-1
     xInterp = ((2*c(2)*c(4)/c(3)) - c(5)) / (c(3) - (4*c(2)*c(1)/c(3)));
     yInterp = -(2*c(1)*xInterp + c(4)) / c(3);
 
-%     figure(3); clf;
-%     imagesc(pcorr); hold on;
-%     plot(xInterp, yInterp, 'wx');
-%     pause();
+    if SHOW_IMG
+        figure(3); clf;
+        imagesc(pcorr); hold on;
+        plot(xInterp, yInterp, 'wx');
+        %pause();
+    end
 
     % Calculate the actual offset from the peak position
     alignX(baseIdx, targetIdx) = xInterp + xx - width / 2 - 1;
     alignY(baseIdx, targetIdx) = yInterp + yy - height / 2 - 1;
-  end
+    
+    if SHOW_IMG
+        figure;
+        [y_p x_p] = meshgrid(-3:0.1:3,-3:0.1:3);
+        z_p=c(1)*x_p.^2+c(2)*y_p.^2+c(3)*x_p.*y_p+c(4)*x_p+c(5)*y_p+c(6);
+        %surf(x_p,y_p,z_p);
+        mesh(x_p,y_p,z_p);
+        alpha(0.1);
+        hold on;
+        [y_p0 x_p0] = meshgrid(-3:3,-3:3);
+        z_p0=pcorr(yy-3:yy+3, xx-3:xx+3);
+        scatter3(x_p0(:),y_p0(:),z_p0(:),'o','LineWidth',1.5);
+        title('Find sub pixel offset with parabola fit');
+        hold off;
+        %pause();
+    end  end
 end
 
 %% Perform a least-squares fit to find the best offset guesses
