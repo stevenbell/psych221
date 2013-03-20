@@ -112,9 +112,14 @@ function [ res ] = CombineLR( IMG, PATTERN, x, y , NEW_SCALE)
     R_super = griddata( X_sample , Y_sample, T ,X_f,Y_f, 'cubic');
 
     if SHOW_IMG
-        mesh(X_f, Y_f,R_super);
+        %mesh(X_f, Y_f,R_super);
+        contour(X_f, Y_f,R_super);
         alpha(0.1);
         %title('LR samples and interpolated data');
+        [X_sample Y_sample] = meshgrid(1:NEW_SCALE:width+1, 1:NEW_SCALE:height+1);
+        mesh(X_sample, Y_sample,X_sample*0); hold on
+        alpha(0.1);
+        
         
         figure;
         mesh(X_f, Y_f,Mask);
@@ -157,6 +162,12 @@ function [ res ] = CombineLR( IMG, PATTERN, x, y , NEW_SCALE)
         %% Display alligned data from LR images
 
         figure2=figure;
+        
+        axes1 = axes('Parent',figure2);
+        view(axes1,[0.5 90]);
+        grid(axes1,'on');
+        hold(axes1,'all');
+
 
         for ii=1:nSamples
             scatter3(X_s{ii}(:), Y_s{ii}(:),data_R_s{ii}(:),'LineWidth',1.5);hold on
@@ -174,7 +185,14 @@ function [ res ] = CombineLR( IMG, PATTERN, x, y , NEW_SCALE)
         hold off;
 
         %% Display samples and weight function on the new grid
-        figure
+        figure5 = figure;
+        
+        axes1 = axes('Parent',figure5);
+        view(axes1,[0.5 90]);
+        grid(axes1,'on');
+        hold(axes1,'all');
+        
+        
 
         for ii=1:nSamples
             scatter3(X{ii}(:), Y{ii}(:),data_R{ii}(:),'LineWidth',1.5); hold on
@@ -194,13 +212,32 @@ function [ res ] = CombineLR( IMG, PATTERN, x, y , NEW_SCALE)
 
         [x y] = meshgrid(-2+center_x:0.1:2+center_x, -2+center_y:0.1:2+center_y);
         weight = exp(-((y-center_y).^2 + (x-center_x).^2));
-        mesh(x,y,weight);
+        contour(x,y,weight); hold on;
+        %mesh(x,y,weight); hold on;
+        %surfc(x,y,weight); hold on;
+        %shading interp;
         alpha(.1);
         
         %title('LR samples and weighting function');
         
         hold off;
 
+        
+        
+        
+        figure;
+        for ii=1:nSamples
+            scatter3(X{ii}(:), Y{ii}(:),data_R{ii}(:),'LineWidth',1.5); hold on
+        end
+        mesh(X_sample, Y_sample,X_sample*0); hold on
+        alpha(0.1);
+        mesh(x,y,weight); hold on;
+        alpha(.1);
+        hold off;
+        
+        
+        
+        
     end
     %%
     res = d_res;
