@@ -6,25 +6,30 @@
 clear;
 
 %% Read in the source image
-sourceFull = im2double(imread('../testimages/PC150634.JPG'));
 
-% Downsample to reduce any artifacts from the original image and to have
-% something of reasonable size to work with
+% Use a large JPEG image, but downsample to reduce any artifacts from the
+% original image and to have something of reasonable size to work with
+sourceFull = im2double(imread('../testimages/PC150634.JPG'));
 source = imresize(sourceFull, 0.25);
 [srcX, srcY, width, height] = deal(20, 20, 640, 480);
+
+% Alternatively, create a synthetic image
+% source = createSynthetic('zoneplate', 400, 300);
+% [srcX, srcY, width, height] = deal(20, 20, 320, 240);
+
 % Don't crop the source; the mosaicking method will do that
 imshow(source);
 hold on;
-rectangle('Position', [srcX, srcY, width, height], 'EdgeColor', [1 1 1]);
+rectangle('Position', [srcX, srcY, width, height], 'EdgeColor', [1 1 0.5]);
 
 %% Create artificial mosaicked images
 % Seed the random number generator so we get repeatable results
-RandStream.setDefaultStream(RandStream('mt19937ar', 'seed', 1));
+RandStream.setDefaultStream(RandStream('mt19937ar', 'seed', 0));
 
-trueOffsetX = [0, 1.8];
-trueOffsetY = [0, -1.2];
-% trueOffsetX = rand(1, 20) * 5;
-% trueOffsetY = rand(1, 20) * 5;
+% trueOffsetX = [0, 1, 0, 1];
+% trueOffsetY = [0, 0, 1, 1];
+trueOffsetX = [0, rand(1, 3) * 5]; % Always use 0 for first offset
+trueOffsetY = [0, rand(1, 3) * 5];
 
 % Multiply offsets by 2 to work in input-image-space
 rawList = createMosaicked(source, length(trueOffsetX), srcX, srcY, width, height,...
@@ -38,12 +43,17 @@ trueOffsetY = trueOffsetY - trueOffsetY(1);
 
 alignmentError = [trueOffsetX', trueOffsetY'] - [dx, dy]
 
+% Use the ground truth offsets
 offsetX = trueOffsetX;
 offsetY = trueOffsetY;
+
+% Use the calculated offsets
+% offsetX = dx;
+% offsetY = dy;
 
 %% Perform demosiacking
 % This expects to find rawList, offsetX, and offsetY in the workspace
 combineImages
 
 %%
-combineImagesPass2
+% combineImagesPass2

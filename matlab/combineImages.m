@@ -10,7 +10,7 @@ hrHeight = lrHeight * gridScale;
 % Indices for the Bayer pattern in the low resolution images
 % Assumes an R G / G B pattern
 [redGridX, redGridY] = meshgrid(1:2:lrWidth, 1:2:lrHeight);
-[greenGridX, greenGridY] = meshgrid(1:2:320, 1:1:240);
+[greenGridX, greenGridY] = meshgrid(1:2:lrWidth, 1:1:lrHeight);
 greenGridX(1:2:lrHeight, :) = greenGridX(1:2:lrHeight, :) + 1;
 [blueGridX, blueGridY] = meshgrid(2:2:lrWidth, 2:2:lrHeight);
 
@@ -91,9 +91,9 @@ redDm = imfilter(redGrid, redFilt);
 greenDm = imfilter(greenGrid, greenFilt);
 blueDm = imfilter(blueGrid, blueFilt);
 
-stack = cat(3, redDm, greenDm, blueDm);
+nearestDm = cat(3, redDm, greenDm, blueDm);
 figure(1); clf;
-imshow(stack);
+imshow(nearestDm);
 
 %% Linear interpolation demosaicking
 redGrid = isRed .* rawList{1};
@@ -105,12 +105,12 @@ redDm = imfilter(redDm, [0.5; 1; 0.5]); % Interpolate vertically
 greenDm = imfilter(greenGrid, [0, 0.25, 0; 0.25, 1, 0.25; 0, 0.25, 0]); % Or do it all at once
 blueDm = imfilter(blueGrid, [0.25, 0.5, 0.25; 0.5, 1, 0.5; 0.25, 0.5, 0.25]);
 
-stack = cat(3, redDm, greenDm, blueDm);
-figure(2); imshow(stack);
+linearDm = cat(3, redDm, greenDm, blueDm);
+figure(2); imshow(linearDm);
 
 %% MATLAB's built-in demosaicking
-stack = demosaic(uint8(rawList{1} * 256), 'rggb');
-figure(3); imshow(stack);
+matlabDm = demosaic(uint8(rawList{1} * 256), 'rggb');
+figure(3); imshow(matlabDm);
 
 %% TODO: ISET demosaicking?
 
